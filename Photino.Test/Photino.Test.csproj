@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Photino.Native\Photino.Native.vcxproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="wwwroot\assets\main.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="wwwroot\assets\photino-logo.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="wwwroot\login.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="wwwroot\main.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="wwwroot\random.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="COPY ..\Photino.Native\x64\Debug\Photino.Native.dll .\bin\Debug\net5.0\&#xD;&#xA;COPY ..\Photino.Native\x64\Debug\Photino.Native.pdb .\bin\Debug\net5.0\&#xD;&#xA;COPY ..\Photino.Native\x64\Debug\WebView2Loader.dll .\bin\Debug\net5.0\&#xD;&#xA;" />
+  </Target>
+
+</Project>

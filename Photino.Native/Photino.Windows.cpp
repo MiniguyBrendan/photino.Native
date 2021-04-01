@@ -1,4 +1,5 @@
 #include "Photino.h"
+#include "CheckFailure.h"
 #include <stdio.h>
 #include <map>
 #include <mutex>
@@ -9,6 +10,9 @@
 #include <wrl.h>
 #include <windows.h>
 #include <cstdio>
+#include <tchar.h>
+#include <string>
+#include <sstream>
 #pragma comment(lib, "Urlmon.lib")
 
 #define WM_USER_SHOWMESSAGE (WM_USER + 0x0001)
@@ -19,7 +23,7 @@ using namespace Microsoft::WRL;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LPCWSTR CLASS_NAME = L"Photino";
 std::mutex invokeLockMutex;
-HINSTANCE Photino::_hInstance;
+//HINSTANCE Photino::_hInstance;
 HWND messageLoopRootWindowHandle;
 std::map<HWND, Photino*> hwndToPhotino;
 
@@ -296,95 +300,115 @@ void Photino::AttachWebView()
 	std::atomic_flag flag = ATOMIC_FLAG_INIT;
 	flag.test_and_set();
 
+	MessageBox(_hWnd, L"Entering AttachWebView", L"Debug", MB_OK);
 	HRESULT envResult = CreateCoreWebView2EnvironmentWithOptions(nullptr, nullptr, nullptr,
+
 		Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
-			[&, this](HRESULT result, ICoreWebView2Environment* env) -> HRESULT {
-				if (result != S_OK) { return result; }
-				HRESULT envResult = env->QueryInterface(&_webviewEnvironment);
-				if (envResult != S_OK)
-				{
-					return envResult;
-				}
+			[&](HRESULT result, ICoreWebView2Environment* env) -> HRESULT { 
 
-				// Create a WebView, whose parent is the main window hWnd
-				env->CreateCoreWebView2Controller(_hWnd, Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
-					[&, this](HRESULT result, ICoreWebView2Controller* controller) -> HRESULT {
+			CHECK_FAILURE(result);
+			if (result != S_OK) { return result; }
 
-						if (result != S_OK) { return result; }
+			MessageBox(_hWnd, L"QueryInterface1A", L"Debug", MB_OK);
+			CHECK_FAILURE(env->QueryInterface(&_webviewEnvironment));
+			MessageBox(_hWnd, L"QueryInterface1B", L"Debug", MB_OK);
 
-						HRESULT envResult = controller->QueryInterface(&_webviewController);
-						if (envResult != S_OK)
-						{
-							return envResult;
-						}
-						_webviewController->get_CoreWebView2(&_webviewWindow);
+			std::wostringstream s;
+			s << std::hex << _hWnd;
+			std::wstring strTitle = s.str();
+			MessageBox(_hWnd, strTitle.c_str(), L"Debug", MB_OK);
 
-						// Add a few settings for the webview
-						// this is a redundant demo step as they are the default settings values
-						ICoreWebView2Settings* Settings;
-						_webviewWindow->get_Settings(&Settings);
-						Settings->put_IsScriptEnabled(TRUE);
-						Settings->put_AreDefaultScriptDialogsEnabled(TRUE);
-						Settings->put_IsWebMessageEnabled(TRUE);
+			// Create a WebView, whose parent is the main window hWnd
+			env->CreateCoreWebView2Controller(_hWnd, 
 
-						// Register interop APIs
-						EventRegistrationToken webMessageToken;
-						_webviewWindow->AddScriptToExecuteOnDocumentCreated(L"window.external = { sendMessage: function(message) { window.chrome.webview.postMessage(message); }, receiveMessage: function(callback) { window.chrome.webview.addEventListener(\'message\', function(e) { callback(e.data); }); } };", nullptr);
-						_webviewWindow->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>(
-							[this](ICoreWebView2* webview, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
-								wil::unique_cotaskmem_string message;
-								args->TryGetWebMessageAsString(&message);
-								_webMessageReceivedCallback(message.get());
-								return S_OK;
-							}).Get(), &webMessageToken);
+				Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
+					[&](HRESULT result, ICoreWebView2Controller* controller) -> HRESULT {
 
-						EventRegistrationToken webResourceRequestedToken;
-						_webviewWindow->AddWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
-						_webviewWindow->add_WebResourceRequested(Callback<ICoreWebView2WebResourceRequestedEventHandler>(
-							[this](ICoreWebView2* sender, ICoreWebView2WebResourceRequestedEventArgs* args)
+					CHECK_FAILURE(result);
+					if (result != S_OK) { return result; }
+
+					MessageBox(_hWnd, L"QueryInterface2A", L"Debug", MB_OK);
+					HRESULT envResult = controller->QueryInterface(&_webviewController);
+					MessageBox(_hWnd, L"QueryInterface2B", L"Debug", MB_OK);
+
+					if (envResult != S_OK) { return envResult; }
+
+					_webviewController->get_CoreWebView2(&_webviewWindow);
+
+					// Add a few settings for the webview
+					// this is a redundant demo step as they are the default settings values
+					ICoreWebView2Settings* Settings;
+					_webviewWindow->get_Settings(&Settings);
+					Settings->put_IsScriptEnabled(TRUE);
+					Settings->put_AreDefaultScriptDialogsEnabled(TRUE);
+					Settings->put_IsWebMessageEnabled(TRUE);
+
+					// Register interop APIs
+					EventRegistrationToken webMessageToken;
+					_webviewWindow->AddScriptToExecuteOnDocumentCreated(L"window.external = { sendMessage: function(message) { window.chrome.webview.postMessage(message); }, receiveMessage: function(callback) { window.chrome.webview.addEventListener(\'message\', function(e) { callback(e.data); }); } };", nullptr);
+					_webviewWindow->add_WebMessageReceived(
+
+						Callback<ICoreWebView2WebMessageReceivedEventHandler>(
+						[&](ICoreWebView2* webview, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
+						
+							MessageBox(_hWnd, L"B", L"Debug", MB_OK);
+							wil::unique_cotaskmem_string message;
+							args->TryGetWebMessageAsString(&message);
+							_webMessageReceivedCallback(message.get());
+							return S_OK;
+						}).Get(), &webMessageToken);
+
+					EventRegistrationToken webResourceRequestedToken;
+					_webviewWindow->AddWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+					_webviewWindow->add_WebResourceRequested(
+						
+						Callback<ICoreWebView2WebResourceRequestedEventHandler>(
+						[&](ICoreWebView2* sender, ICoreWebView2WebResourceRequestedEventArgs* args) {
+							MessageBox(_hWnd, L"C", L"Debug", MB_OK);		ICoreWebView2WebResourceRequest* req;
+							args->get_Request(&req);
+
+							wil::unique_cotaskmem_string uri;
+							req->get_Uri(&uri);
+							std::wstring uriString = uri.get();
+							size_t colonPos = uriString.find(L':', 0);
+							if (colonPos > 0)
 							{
-								ICoreWebView2WebResourceRequest* req;
-								args->get_Request(&req);
-
-								wil::unique_cotaskmem_string uri;
-								req->get_Uri(&uri);
-								std::wstring uriString = uri.get();
-								size_t colonPos = uriString.find(L':', 0);
-								if (colonPos > 0)
+								std::wstring scheme = uriString.substr(0, colonPos);
+								WebResourceRequestedCallback handler = _schemeToRequestHandler[scheme];
+								if (handler != NULL)
 								{
-									std::wstring scheme = uriString.substr(0, colonPos);
-									WebResourceRequestedCallback handler = _schemeToRequestHandler[scheme];
-									if (handler != NULL)
+									int numBytes;
+									AutoString contentType;
+									wil::unique_cotaskmem dotNetResponse(handler(uriString.c_str(), &numBytes, &contentType));
+
+									if (dotNetResponse != nullptr && contentType != nullptr)
 									{
-										int numBytes;
-										AutoString contentType;
-										wil::unique_cotaskmem dotNetResponse(handler(uriString.c_str(), &numBytes, &contentType));
+										std::wstring contentTypeWS = contentType;
 
-										if (dotNetResponse != nullptr && contentType != nullptr)
-										{
-											std::wstring contentTypeWS = contentType;
-
-											IStream* dataStream = SHCreateMemStream((BYTE*)dotNetResponse.get(), numBytes);
-											wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-											_webviewEnvironment->CreateWebResourceResponse(
-												dataStream, 200, L"OK", (L"Content-Type: " + contentTypeWS).c_str(),
-												&response);
-											args->put_Response(response.get());
-										}
+										IStream* dataStream = SHCreateMemStream((BYTE*)dotNetResponse.get(), numBytes);
+										wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+										_webviewEnvironment->CreateWebResourceResponse(
+											dataStream, 200, L"OK", (L"Content-Type: " + contentTypeWS).c_str(),
+											&response);
+										args->put_Response(response.get());
 									}
 								}
-
-								return S_OK;
 							}
-						).Get(), &webResourceRequestedToken);
 
-						RefitContent();
+							return S_OK;
+						}
+					).Get(), &webResourceRequestedToken);
 
-						flag.clear();
-						return S_OK;
-					}).Get());
-				return S_OK;
-			}).Get());
+					MessageBox(_hWnd, L"D", L"Debug", MB_OK);
+					RefitContent();
+
+					flag.clear();
+					return S_OK;
+				}).Get());
+			return S_OK;
+		}).Get());
+
+	CHECK_FAILURE(envResult);
 
 	if (envResult != S_OK)
 	{
