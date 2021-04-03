@@ -11,6 +11,8 @@ namespace PhotinoNET
 {
     public class PhotinoWindow : IPhotinoWindow, IDisposable
     {
+        private static IntPtr _hInstance = IntPtr.Zero;
+
         // Native Interop
         private readonly IntPtr _nativeInstance;
         private readonly int _managedThreadId;
@@ -287,6 +289,21 @@ namespace PhotinoNET
             int top = 20,
             bool fullscreen = false)
         {
+            Thread.Sleep(1);
+
+            if (PhotinoWindow.IsWindowsPlatform)
+            {
+                if (_hInstance == IntPtr.Zero)
+                {
+                    _hInstance = Marshal.GetHINSTANCE(typeof(PhotinoWindow).Module);
+                    Photino_register_win32(_hInstance);
+                }
+            }
+            else if (PhotinoWindow.IsMacOsPlatform)
+            {
+                Photino_register_mac();
+            }
+
             _managedThreadId = Thread.CurrentThread.ManagedThreadId;
 
             // Native Interop Events

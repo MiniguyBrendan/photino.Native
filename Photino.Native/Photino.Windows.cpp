@@ -23,7 +23,7 @@ using namespace Microsoft::WRL;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LPCWSTR CLASS_NAME = L"Photino";
 std::mutex invokeLockMutex;
-//HINSTANCE Photino::_hInstance;
+HINSTANCE Photino::_hInstance;
 HWND messageLoopRootWindowHandle;
 std::map<HWND, Photino*> hwndToPhotino;
 
@@ -82,6 +82,7 @@ Photino::Photino(AutoString title, Photino* parent, WebMessageReceivedCallback w
 		_hInstance, // Instance handle
 		this        // Additional application data
 	);
+
 	hwndToPhotino[_hWnd] = this;
 }
 
@@ -127,48 +128,48 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		return 0;
 	}
-	case WM_USER_SHOWMESSAGE:
-	{
-		ShowMessageParams* params = (ShowMessageParams*)wParam;
-		MessageBox(hwnd, params->body.c_str(), params->title.c_str(), params->type);
-		delete params;
-		return 0;
-	}
-	case WM_USER_INVOKE:
-	{
-		ACTION callback = (ACTION)wParam;
-		callback();
-		InvokeWaitInfo* waitInfo = (InvokeWaitInfo*)lParam;
-		{
-			std::lock_guard<std::mutex> guard(invokeLockMutex);
-			waitInfo->isCompleted = true;
-		}
-		waitInfo->completionNotifier.notify_one();
-		return 0;
-	}
-	case WM_SIZE:
-	{
-		Photino* Photino = hwndToPhotino[hwnd];
-		if (Photino)
-		{
-			Photino->RefitContent();
-			int width, height;
-			Photino->GetSize(&width, &height);
-			Photino->InvokeResized(width, height);
-		}
-		return 0;
-	}
-	case WM_MOVE:
-	{
-		Photino* Photino = hwndToPhotino[hwnd];
-		if (Photino)
-		{
-			int x, y;
-			Photino->GetPosition(&x, &y);
-			Photino->InvokeMoved(x, y);
-		}
-		return 0;
-	}
+	//case WM_USER_SHOWMESSAGE:
+	//{
+		//ShowMessageParams* params = (ShowMessageParams*)wParam;
+		//MessageBox(hwnd, params->body.c_str(), params->title.c_str(), params->type);
+		//delete params;
+	//	return 0;
+	//}
+	//case WM_USER_INVOKE:
+	//{
+		//ACTION callback = (ACTION)wParam;
+		//callback();
+		//InvokeWaitInfo* waitInfo = (InvokeWaitInfo*)lParam;
+		//{
+		//	std::lock_guard<std::mutex> guard(invokeLockMutex);
+		//	waitInfo->isCompleted = true;
+		//}
+		//waitInfo->completionNotifier.notify_one();
+		//return 0;
+	//}
+	//case WM_SIZE:
+	//{
+	//	Photino* Photino = hwndToPhotino[hwnd];
+	//	if (Photino)
+	//	{
+	//		Photino->RefitContent();
+	//		int width, height;
+	//		Photino->GetSize(&width, &height);
+	//		Photino->InvokeResized(width, height);
+	//	}
+	//	return 0;
+	//}
+	//case WM_MOVE:
+	//{
+	//	Photino* Photino = hwndToPhotino[hwnd];
+	//	if (Photino)
+	//	{
+	//		int x, y;
+	//		Photino->GetPosition(&x, &y);
+	//		Photino->InvokeMoved(x, y);
+	//	}
+	//	return 0;
+	//}
 	break;
 	}
 
@@ -314,21 +315,28 @@ void Photino::AttachWebView()
 			MessageBox(_hWnd, L"QueryInterface1B", L"Debug", MB_OK);
 
 			std::wostringstream s;
-			s << std::hex << _hWnd;
+			s << std::hex << &_webviewEnvironment;
 			std::wstring strTitle = s.str();
 			MessageBox(_hWnd, strTitle.c_str(), L"Debug", MB_OK);
 
 			// Create a WebView, whose parent is the main window hWnd
-			env->CreateCoreWebView2Controller(_hWnd, 
+			HRESULT mike = env->CreateCoreWebView2Controller(_hWnd, 
 
 				Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
 					[&](HRESULT result, ICoreWebView2Controller* controller) -> HRESULT {
+
+					MessageBox(_hWnd, L"ICoreWebView2CreateCoreWebView2ControllerCompletedHandler", L"Debug", MB_OK);
+
+					if (controller != nullptr)
+						_webviewController = controller;
+					else
+						MessageBox(NULL, L"Controller is null", L"", MB_OK);
 
 					CHECK_FAILURE(result);
 					if (result != S_OK) { return result; }
 
 					MessageBox(_hWnd, L"QueryInterface2A", L"Debug", MB_OK);
-					HRESULT envResult = controller->QueryInterface(&_webviewController);
+					//HRESULT envResult = controller->QueryInterface(&_webviewController);
 					MessageBox(_hWnd, L"QueryInterface2B", L"Debug", MB_OK);
 
 					if (envResult != S_OK) { return envResult; }
@@ -351,7 +359,7 @@ void Photino::AttachWebView()
 						Callback<ICoreWebView2WebMessageReceivedEventHandler>(
 						[&](ICoreWebView2* webview, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
 						
-							MessageBox(_hWnd, L"B", L"Debug", MB_OK);
+							MessageBox(_hWnd, L"This is B!", L"Debug", MB_OK);
 							wil::unique_cotaskmem_string message;
 							args->TryGetWebMessageAsString(&message);
 							_webMessageReceivedCallback(message.get());
@@ -405,6 +413,12 @@ void Photino::AttachWebView()
 					flag.clear();
 					return S_OK;
 				}).Get());
+
+			if (mike == S_OK)
+				MessageBox(NULL, L"OK", L"FFFF", MB_OK);
+			else
+				MessageBox(NULL, L"NOT OK", L"FFFF", MB_OK);
+			//flag.clear();
 			return S_OK;
 		}).Get());
 
@@ -418,13 +432,17 @@ void Photino::AttachWebView()
 	}
 	else
 	{
+		MessageBox(NULL, L"Begin Blocking", L"", MB_OK);
 		// Block until it's ready. This simplifies things for the caller, so they don't need to regard this process as async.
 		MSG msg = { };
-		while (flag.test_and_set() && GetMessage(&msg, NULL, 0, 0))
+		int counter = 0;
+		while (flag.test_and_set() && GetMessage(&msg, nullptr, 0, 0))
 		{
+			if (counter++ > 200) break;
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		MessageBox(NULL, L"I Quit", L"", MB_OK);
 	}
 }
 

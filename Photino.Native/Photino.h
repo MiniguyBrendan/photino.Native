@@ -53,7 +53,7 @@ private:
 	ResizedCallback _resizedCallback;
 	ClosingCallback _closingCallback;
 #ifdef _WIN32
-	HINSTANCE _hInstance;
+	static HINSTANCE _hInstance;
 	HWND _hWnd;
 	Photino* _parent;
 	wil::com_ptr<ICoreWebView2Environment> _webviewEnvironment;
@@ -77,7 +77,7 @@ private:
 
 public:
 #ifdef _WIN32
-	void Register(HINSTANCE hInstance);
+	static void Register(HINSTANCE hInstance);
 	HWND getHwnd();
 	void RefitContent();
 #elif __APPLE__

@@ -11,7 +11,7 @@ extern "C"
 #ifdef _WIN32
 	EXPORTED void Photino_register_win32(Photino* instance, HINSTANCE hInstance)
 	{
-		instance->Register(hInstance);
+		Photino::Register(hInstance);
 	}
 
 	EXPORTED HWND Photino_getHwnd_win32(Photino* instance)
