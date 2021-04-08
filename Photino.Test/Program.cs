@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading;
 
 namespace PhotinoNET
 {
@@ -54,6 +56,7 @@ namespace PhotinoNET
             {
                 var random = new Random();
 
+                Debug.WriteLine($"{Thread.CurrentThread.GetApartmentState()}");
                 int workAreaWidth = window.MainMonitor.WorkArea.Width;
                 int workAreaHeight = window.MainMonitor.WorkArea.Height;
 
@@ -70,7 +73,7 @@ namespace PhotinoNET
                 };
 
                 new PhotinoWindow($"Random Window ({window.Children.Count + 1})", randomWindowConfiguration, width, height, left, top)
-                    .RegisterWebMessageReceivedHandler(CloseWindowMessageDelegate)
+                    //.RegisterWebMessageReceivedHandler(CloseWindowMessageDelegate)
                     .Load("wwwroot/random.html")
                     .WaitForClose();
             }

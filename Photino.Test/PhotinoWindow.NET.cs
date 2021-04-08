@@ -293,11 +293,11 @@ namespace PhotinoNET
 
             if (PhotinoWindow.IsWindowsPlatform)
             {
-                if (_hInstance == IntPtr.Zero)
-                {
+                //if (_hInstance == IntPtr.Zero)
+                //{
                     _hInstance = Marshal.GetHINSTANCE(typeof(PhotinoWindow).Module);
                     Photino_register_win32(_hInstance);
-                }
+                //}
             }
             else if (PhotinoWindow.IsMacOsPlatform)
             {
@@ -347,11 +347,11 @@ namespace PhotinoNET
             Invoke(() => Photino_SetClosingCallback(_nativeInstance, onClosingDelegate));
 
             // Manage parent / child relationship
-            if (_parent != null)
-            {
-                this.Parent = _parent;
-                this.Parent.AddChild(this);
-            }
+            //if (_parent != null)
+            //{
+            //    this.Parent = _parent;
+            //    this.Parent.AddChild(this);
+            //}
 
             // Fire post-create event handlers
             this.OnWindowCreated();

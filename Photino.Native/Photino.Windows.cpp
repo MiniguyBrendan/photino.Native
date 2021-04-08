@@ -128,48 +128,48 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		return 0;
 	}
-	//case WM_USER_SHOWMESSAGE:
-	//{
-		//ShowMessageParams* params = (ShowMessageParams*)wParam;
-		//MessageBox(hwnd, params->body.c_str(), params->title.c_str(), params->type);
-		//delete params;
-	//	return 0;
-	//}
-	//case WM_USER_INVOKE:
-	//{
-		//ACTION callback = (ACTION)wParam;
-		//callback();
-		//InvokeWaitInfo* waitInfo = (InvokeWaitInfo*)lParam;
-		//{
-		//	std::lock_guard<std::mutex> guard(invokeLockMutex);
-		//	waitInfo->isCompleted = true;
-		//}
-		//waitInfo->completionNotifier.notify_one();
-		//return 0;
-	//}
-	//case WM_SIZE:
-	//{
-	//	Photino* Photino = hwndToPhotino[hwnd];
-	//	if (Photino)
-	//	{
-	//		Photino->RefitContent();
-	//		int width, height;
-	//		Photino->GetSize(&width, &height);
-	//		Photino->InvokeResized(width, height);
-	//	}
-	//	return 0;
-	//}
-	//case WM_MOVE:
-	//{
-	//	Photino* Photino = hwndToPhotino[hwnd];
-	//	if (Photino)
-	//	{
-	//		int x, y;
-	//		Photino->GetPosition(&x, &y);
-	//		Photino->InvokeMoved(x, y);
-	//	}
-	//	return 0;
-	//}
+	case WM_USER_SHOWMESSAGE:
+	{
+		ShowMessageParams* params = (ShowMessageParams*)wParam;
+		MessageBox(hwnd, params->body.c_str(), params->title.c_str(), params->type);
+		delete params;
+		return 0;
+	}
+	case WM_USER_INVOKE:
+	{
+		ACTION callback = (ACTION)wParam;
+		callback();
+		InvokeWaitInfo* waitInfo = (InvokeWaitInfo*)lParam;
+		{
+			std::lock_guard<std::mutex> guard(invokeLockMutex);
+			waitInfo->isCompleted = true;
+		}
+		waitInfo->completionNotifier.notify_one();
+		return 0;
+	}
+	case WM_SIZE:
+	{
+		Photino* Photino = hwndToPhotino[hwnd];
+		if (Photino)
+		{
+			Photino->RefitContent();
+			int width, height;
+			Photino->GetSize(&width, &height);
+			Photino->InvokeResized(width, height);
+		}
+		return 0;
+	}
+	case WM_MOVE:
+	{
+		Photino* Photino = hwndToPhotino[hwnd];
+		if (Photino)
+		{
+			int x, y;
+			Photino->GetPosition(&x, &y);
+			Photino->InvokeMoved(x, y);
+		}
+		return 0;
+	}
 	break;
 	}
 
@@ -301,7 +301,7 @@ void Photino::AttachWebView()
 	std::atomic_flag flag = ATOMIC_FLAG_INIT;
 	flag.test_and_set();
 
-	MessageBox(_hWnd, L"Entering AttachWebView", L"Debug", MB_OK);
+	//MessageBox(_hWnd, L"Entering AttachWebView", L"Debug", MB_OK);
 	HRESULT envResult = CreateCoreWebView2EnvironmentWithOptions(nullptr, nullptr, nullptr,
 
 		Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
@@ -310,14 +310,14 @@ void Photino::AttachWebView()
 			CHECK_FAILURE(result);
 			if (result != S_OK) { return result; }
 
-			MessageBox(_hWnd, L"QueryInterface1A", L"Debug", MB_OK);
+			//MessageBox(_hWnd, L"QueryInterface1A", L"Debug", MB_OK);
 			CHECK_FAILURE(env->QueryInterface(&_webviewEnvironment));
-			MessageBox(_hWnd, L"QueryInterface1B", L"Debug", MB_OK);
+			//MessageBox(_hWnd, L"QueryInterface1B", L"Debug", MB_OK);
 
 			std::wostringstream s;
 			s << std::hex << &_webviewEnvironment;
 			std::wstring strTitle = s.str();
-			MessageBox(_hWnd, strTitle.c_str(), L"Debug", MB_OK);
+			//MessageBox(_hWnd, strTitle.c_str(), L"Debug", MB_OK);
 
 			// Create a WebView, whose parent is the main window hWnd
 			HRESULT mike = env->CreateCoreWebView2Controller(_hWnd, 
@@ -325,7 +325,7 @@ void Photino::AttachWebView()
 				Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
 					[&](HRESULT result, ICoreWebView2Controller* controller) -> HRESULT {
 
-					MessageBox(_hWnd, L"ICoreWebView2CreateCoreWebView2ControllerCompletedHandler", L"Debug", MB_OK);
+					//MessageBox(_hWnd, L"ICoreWebView2CreateCoreWebView2ControllerCompletedHandler", L"Debug", MB_OK);
 
 					if (controller != nullptr)
 						_webviewController = controller;
@@ -335,21 +335,21 @@ void Photino::AttachWebView()
 					CHECK_FAILURE(result);
 					if (result != S_OK) { return result; }
 
-					MessageBox(_hWnd, L"QueryInterface2A", L"Debug", MB_OK);
-					//HRESULT envResult = controller->QueryInterface(&_webviewController);
+					//MessageBox(_hWnd, L"QueryInterface2A", L"Debug", MB_OK);
+					HRESULT envResult = controller->QueryInterface(&_webviewController);
 					MessageBox(_hWnd, L"QueryInterface2B", L"Debug", MB_OK);
 
 					if (envResult != S_OK) { return envResult; }
 
 					_webviewController->get_CoreWebView2(&_webviewWindow);
 
-					// Add a few settings for the webview
-					// this is a redundant demo step as they are the default settings values
-					ICoreWebView2Settings* Settings;
-					_webviewWindow->get_Settings(&Settings);
-					Settings->put_IsScriptEnabled(TRUE);
-					Settings->put_AreDefaultScriptDialogsEnabled(TRUE);
-					Settings->put_IsWebMessageEnabled(TRUE);
+					//// Add a few settings for the webview
+					//// this is a redundant demo step as they are the default settings values
+					//ICoreWebView2Settings* Settings;
+					//_webviewWindow->get_Settings(&Settings);
+					//Settings->put_IsScriptEnabled(TRUE);
+					//Settings->put_AreDefaultScriptDialogsEnabled(TRUE);
+					//Settings->put_IsWebMessageEnabled(TRUE);
 
 					// Register interop APIs
 					EventRegistrationToken webMessageToken;
@@ -363,61 +363,63 @@ void Photino::AttachWebView()
 							wil::unique_cotaskmem_string message;
 							args->TryGetWebMessageAsString(&message);
 							_webMessageReceivedCallback(message.get());
+							MessageBox(_hWnd, L"This is B2!", L"Debug", MB_OK);
 							return S_OK;
 						}).Get(), &webMessageToken);
 
-					EventRegistrationToken webResourceRequestedToken;
-					_webviewWindow->AddWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
-					_webviewWindow->add_WebResourceRequested(
-						
-						Callback<ICoreWebView2WebResourceRequestedEventHandler>(
-						[&](ICoreWebView2* sender, ICoreWebView2WebResourceRequestedEventArgs* args) {
-							MessageBox(_hWnd, L"C", L"Debug", MB_OK);		ICoreWebView2WebResourceRequest* req;
-							args->get_Request(&req);
+					//EventRegistrationToken webResourceRequestedToken;
+					//_webviewWindow->AddWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+					//_webviewWindow->add_WebResourceRequested(
+					//	
+					//	Callback<ICoreWebView2WebResourceRequestedEventHandler>(
+					//	[&](ICoreWebView2* sender, ICoreWebView2WebResourceRequestedEventArgs* args) {
+					//		//MessageBox(_hWnd, L"C", L"Debug", MB_OK);		
+					//		ICoreWebView2WebResourceRequest* req;
+					//		args->get_Request(&req);
 
-							wil::unique_cotaskmem_string uri;
-							req->get_Uri(&uri);
-							std::wstring uriString = uri.get();
-							size_t colonPos = uriString.find(L':', 0);
-							if (colonPos > 0)
-							{
-								std::wstring scheme = uriString.substr(0, colonPos);
-								WebResourceRequestedCallback handler = _schemeToRequestHandler[scheme];
-								if (handler != NULL)
-								{
-									int numBytes;
-									AutoString contentType;
-									wil::unique_cotaskmem dotNetResponse(handler(uriString.c_str(), &numBytes, &contentType));
+					//		wil::unique_cotaskmem_string uri;
+					//		req->get_Uri(&uri);
+					//		std::wstring uriString = uri.get();
+					//		size_t colonPos = uriString.find(L':', 0);
+					//		if (colonPos > 0)
+					//		{
+					//			std::wstring scheme = uriString.substr(0, colonPos);
+					//			WebResourceRequestedCallback handler = _schemeToRequestHandler[scheme];
+					//			if (handler != NULL)
+					//			{
+					//				int numBytes;
+					//				AutoString contentType;
+					//				wil::unique_cotaskmem dotNetResponse(handler(uriString.c_str(), &numBytes, &contentType));
 
-									if (dotNetResponse != nullptr && contentType != nullptr)
-									{
-										std::wstring contentTypeWS = contentType;
+					//				if (dotNetResponse != nullptr && contentType != nullptr)
+					//				{
+					//					std::wstring contentTypeWS = contentType;
 
-										IStream* dataStream = SHCreateMemStream((BYTE*)dotNetResponse.get(), numBytes);
-										wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-										_webviewEnvironment->CreateWebResourceResponse(
-											dataStream, 200, L"OK", (L"Content-Type: " + contentTypeWS).c_str(),
-											&response);
-										args->put_Response(response.get());
-									}
-								}
-							}
+					//					IStream* dataStream = SHCreateMemStream((BYTE*)dotNetResponse.get(), numBytes);
+					//					wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+					//					_webviewEnvironment->CreateWebResourceResponse(
+					//						dataStream, 200, L"OK", (L"Content-Type: " + contentTypeWS).c_str(),
+					//						&response);
+					//					args->put_Response(response.get());
+					//				}
+					//			}
+					//		}
 
-							return S_OK;
-						}
-					).Get(), &webResourceRequestedToken);
+					//		return S_OK;
+					//	}
+					//).Get(), &webResourceRequestedToken);
 
-					MessageBox(_hWnd, L"D", L"Debug", MB_OK);
+					//MessageBox(_hWnd, L"D", L"Debug", MB_OK);
 					RefitContent();
 
 					flag.clear();
 					return S_OK;
 				}).Get());
 
-			if (mike == S_OK)
-				MessageBox(NULL, L"OK", L"FFFF", MB_OK);
-			else
-				MessageBox(NULL, L"NOT OK", L"FFFF", MB_OK);
+			//if (mike == S_OK)
+				//MessageBox(NULL, L"OK", L"FFFF", MB_OK);
+			//else
+				//MessageBox(NULL, L"NOT OK", L"FFFF", MB_OK);
 			//flag.clear();
 			return S_OK;
 		}).Get());
@@ -432,7 +434,7 @@ void Photino::AttachWebView()
 	}
 	else
 	{
-		MessageBox(NULL, L"Begin Blocking", L"", MB_OK);
+		//MessageBox(NULL, L"Begin Blocking", L"", MB_OK);
 		// Block until it's ready. This simplifies things for the caller, so they don't need to regard this process as async.
 		MSG msg = { };
 		int counter = 0;
@@ -442,7 +444,7 @@ void Photino::AttachWebView()
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		MessageBox(NULL, L"I Quit", L"", MB_OK);
+		//MessageBox(NULL, L"I Quit", L"", MB_OK);
 	}
 }
 
