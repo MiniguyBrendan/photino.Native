@@ -56,14 +56,24 @@ Photino::Photino(
     // Create Window
     NSRect frame = NSMakeRect(0, 0, 0, 0);
 
+    NSWindowStyleMask style;
+    if (chromeless) {
+        style = NSWindowStyleMaskBorderless;
+    }
+    else {
+        style = NSWindowStyleMaskTitled
+              | NSWindowStyleMaskClosable
+              | NSWindowStyleMaskResizable
+              | NSWindowStyleMaskMiniaturizable;
+    }
+
     _window = [[NSWindow alloc]
         initWithContentRect: frame
-        styleMask: NSWindowStyleMaskTitled
-                 | NSWindowStyleMaskClosable
-                 | NSWindowStyleMaskResizable
-                 | NSWindowStyleMaskMiniaturizable
+        styleMask: style
         backing: NSBackingStoreBuffered
         defer: true];
+
+    [[_window windowController] setShouldCascadeWindows:NO];
     
     SetTitle(title);
     SetPosition(x, y);
@@ -412,7 +422,7 @@ void Photino::SetPosition(int x, int y)
 
     CGPoint position = CGPointMake(left, top);
 
-    [_window setFrameOrigin: position];
+    [_window setFrameTopLeftPoint: position];
 }
 
 void Photino::SetTopmost(bool topmost)
